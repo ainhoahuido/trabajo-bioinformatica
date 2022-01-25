@@ -1,0 +1,11 @@
+---
+title: "Trabajo personal"
+author: "Ainhoa Huidobro"
+date: "25/1/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
