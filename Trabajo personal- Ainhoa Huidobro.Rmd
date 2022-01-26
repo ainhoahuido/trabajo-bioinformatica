@@ -9,3 +9,58 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# Trabajo Personal Bioinformática
+## **Analizando dataset nycflights13:: flights**
+
+### **1. Encuentra todos los vuelos que llegaron más de una hora tarde de lo previsto.**
+
+Primero se debe instalar el paquete de nycflights13 y se carga el data set de nycflights13:: flights. A continuación, se abrirán los paquetes de lubridate y tidyverse para posteriores cuestiones.
+```{r}
+library(nycflights13)
+vuelos <- nycflights13::flights
+
+library(lubridate)
+library(tidyverse)
+```
+Mediante este comando se filtran aquellos vuelos que llegaron más de una hora tarde de lo previsto.
+```{r}
+retraso <- filter(vuelos, arr_delay > 60)
+retraso
+dim(retraso)
+```
+
+Con el primer comando se puede ver cuáles fueron los vuelos retrasado más de una hora y con dim se ve que los vuelos retrasados fueron 27789.
+
+### **2. Encuentra todos los vuelos que volaron hacia San Francisco (aeropuertos SFO y OAK)**
+```{r}
+sanfran <- vuelos[vuelos$dest == "SFO" | vuelos$dest == "OAK",]
+sanfran
+```
+
+### **3. Encuentra todos los vuelos operados por United American (UA) o por American Airlines (AA)**
+```{r}
+filter(vuelos, carrier == "UA" | carrier == "AA")
+```
+Estos son los vuelos operados por UA o AA
+
+### **4. Encuentra todos los vuelos que salieron los meses de primavera (Abril, Mayo y Junio)**
+```{r}
+vuelos[vuelos$month == 4 | vuelos$month == 5 | vuelos$month == 6,]
+```
+
+### **5. Encuentra todos los vuelos que llegaron más de una hora tarde pero salieron con menos de una hora de retraso.**
+```{r}
+filter(vuelos, dep_delay < 60, arr_delay > 60)
+```
+
+### **6. Encuentra todos los vuelos que salieron con más de una hora de retraso pero consiguieron llegar con menos de 30 minutos de retraso (el avión aceleró en el aire)**
+```{r}
+filter(vuelos, dep_delay > 60, arr_delay < 30)
+```
+
+### **7. Encuentra todos los vuelos que salen entre medianoche y las 7 de la mañana (vuelos nocturnos).**
+```{r}
+vuelo_nocturno <- vuelos[which(vuelos$hour >=0 & vuelos$hour <=7),]
+vuelo_nocturno
+```
+
