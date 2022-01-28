@@ -46,3 +46,24 @@ vuelo_nocturno
 noc <- filter(vuelos, hour >= 0, hour <= 7)
 dim(noc)
 dim(vuelo_nocturno)
+
+#¿Cuántos vuelos tienen un valor desconocido de dep_time?
+dep_desconocido <- vuelos[is.na(vuelos$dep_time),]
+dim(dep_desconocido)
+table(is.na(vuelos$dep_time))
+print("Hay 8255 vuelos con valor desconocido de dep_time")
+
+#¿Qué variables del dataset contienen valores desconocidos?
+table(is.na(vuelos))
+apply(is.na(vuelos), 2, summary)
+
+
+# Ordena los vuelos de flights para encontrar los vuelos más retrasados en la salida. ¿Quévuelos fueron los que salieron los primeros antes de lo previsto?
+order(vuelos)
+??arrange
+arrange(vuelos, desc(dep_delay))
+?desc
+arrange(vuelos, dep_delay)
+
+# más rapidos
+arrange(vuelos, desc(distance/air_time))

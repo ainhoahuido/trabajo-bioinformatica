@@ -64,3 +64,31 @@ vuelo_nocturno <- vuelos[which(vuelos$hour >=0 & vuelos$hour <=7),]
 vuelo_nocturno
 ```
 
+### **8. ¿Cuántos vuelos tienen un valor desconocido de dep_time?**
+```{r}
+table(is.na(vuelos$dep_time))
+print("Hay 8255 vuelos con valor desconocido de dep_time")
+```
+
+### **9.¿Qué variables del dataset contienen valores desconocidos?**
+```{r}
+apply(is.na(vuelos), 2, summary)
+```
+
+### **10. Ordena los vuelos de flights para encontrar los vuelos más retrasados en la salida. ¿Qué vuelos fueron los que salieron los primeros antes de lo previsto?**
+Así se ordenan los vuelos de salida más retrasada a menos.
+```{r}
+arrange(vuelos, desc(dep_delay))
+```
+
+Estos son los vuelos que salieron los primeros antes de lo previsto
+```{r}
+arrange(vuelos, dep_delay)
+```
+
+### **11. Ordena los vuelos de flights para encontrar los vuelos más rápidos. Usa el concepto de rapidez que consideres.**
+Si consideramos que la velocidad es igual a "distance" entre "air_time", es decir, el espacio que recorren por unidad de tiempo, y los ordenamos de manera descendente, los primeros que aparecen serán los más rápidos. 
+```{r}
+arrange(vuelos, desc(distance/air_time))
+```
+
