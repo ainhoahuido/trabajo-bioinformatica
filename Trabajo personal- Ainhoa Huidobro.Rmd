@@ -35,28 +35,38 @@ Con el primer comando se puede ver cuáles fueron los vuelos retrasado más de u
 ```{r}
 sanfran <- vuelos[vuelos$dest == "SFO" | vuelos$dest == "OAK",]
 sanfran
+dim(sanfran)
 ```
+
+Los vuelos que volaron hacia San Francisco fueron 13643.
 
 ### **3. Encuentra todos los vuelos operados por United American (UA) o por American Airlines (AA)**
 ```{r}
-filter(vuelos, carrier == "UA" | carrier == "AA")
+A <- filter(vuelos, carrier == "UA" | carrier == "AA")
+dim(A)
 ```
-Estos son los vuelos operados por UA o AA
+Los vuelos operados por United American o por American Airlines fueron 91394.
 
 ### **4. Encuentra todos los vuelos que salieron los meses de primavera (Abril, Mayo y Junio)**
 ```{r}
-vuelos[vuelos$month == 4 | vuelos$month == 5 | vuelos$month == 6,]
+pri <- vuelos[vuelos$month == 4 | vuelos$month == 5 | vuelos$month == 6,]
+dim(pri)
 ```
+Los vuelos que salieron los meses de primavera fueron 85369.
 
 ### **5. Encuentra todos los vuelos que llegaron más de una hora tarde pero salieron con menos de una hora de retraso.**
 ```{r}
-filter(vuelos, dep_delay < 60, arr_delay > 60)
+t <- filter(vuelos, dep_delay < 60, arr_delay > 60)
+dim(t)
 ```
+Los vuelos que salieron más de una hora tarde, pero salieron con menos de una hora de retraso fueron 4956.
 
 ### **6. Encuentra todos los vuelos que salieron con más de una hora de retraso pero consiguieron llegar con menos de 30 minutos de retraso (el avión aceleró en el aire)**
 ```{r}
-filter(vuelos, dep_delay > 60, arr_delay < 30)
+r <- filter(vuelos, dep_delay > 60, arr_delay < 30)
+dim(r)
 ```
+Los vuelos que salieron con más de una hora de retraso pero que llegaron con menos de 30 min de retraso fueron 181.
 
 ### **7. Encuentra todos los vuelos que salen entre medianoche y las 7 de la mañana (vuelos nocturnos).**
 ```{r}
@@ -72,8 +82,9 @@ print("Hay 8255 vuelos con valor desconocido de dep_time")
 
 ### **9.¿Qué variables del dataset contienen valores desconocidos?**
 ```{r}
-apply(is.na(vuelos), 2, summary)
+apply(X = is.na(vuelos), MARGIN = 2, FUN = sum)
 ```
+Las variables que tienen valores NA son: dep_time, de_delay, arr_time, shed_arr_time, arr_delay, tailnum y air_time.
 
 ### **10. Ordena los vuelos de flights para encontrar los vuelos más retrasados en la salida. ¿Qué vuelos fueron los que salieron los primeros antes de lo previsto?**
 Así se ordenan los vuelos de salida más retrasada a menos.
@@ -90,5 +101,214 @@ arrange(vuelos, dep_delay)
 Si consideramos que la velocidad es igual a "distance" entre "air_time", es decir, el espacio que recorren por unidad de tiempo, y los ordenamos de manera descendente, los primeros que aparecen serán los más rápidos. 
 ```{r}
 arrange(vuelos, desc(distance/air_time))
+```
+
+### **12. ¿Qué vuelos tienen los trayectos más largos?**
+Se consideran los vuelos con mayor trayecto aquellos que recorren una mayor distancia, y se ordenan de mayor a menor. 
+```{r}
+arrange(vuelos, desc(distance))
+```
+
+### **13. ¿Qué vuelos tienen los trayectos más cortos?**
+```{r}
+arrange(vuelos, distance)
+```
+
+### **14. El dataset de vuelos tiene dos variables, dep_time y sched_dep_time muy útiles pero difíciles de usar por cómo vienen dadas al no ser variables continuas. Fíjate que cuando pone 559, se refiere a que el vuelo salió a las 5:59... Convierte este dato en otro más útil que represente el número de minutos que pasan desde media noche.**
+Se crea una nueva data dónde se introducen dos nuevas columnas con estas variables en minutos. 
+```{r}
+vuelos_min <-mutate(vuelos, sched_dep_time_min = (sched_dep_time %/% 100 * 60 + sched_dep_time %% 100) %% 1440, dep_time_min = (dep_time %/% 100 * 60 + dep_time %% 100) %% 1440)
+
+```
+
+### **15. Compara los valores de dep_time, sched_dep_time y dep_delay. ¿Cómo deberían relacionarse estos tres números? Compruébalo y haz las correcciones numéricas que necesitas.**
+```{r}
+vuelos_min$comparacion1 <- vuelos_min$sched_dep_time + vuelos_min$dep_delay
+vuelos_min$comparacion2 <- vuelos_min$sched_dep_time_min + vuelos_min$dep_delay
+```
+La relación que debería haber entre estas variables es que la suma de shed_dep_time y dep_delay tendría que ser igual al valor de dep_time. Sin embargo, las unidades de estas variables no son iguales, por lo que como se ve en la comparación 1 esos valores son erróneos porque no coinciden con la dep_time_min.
+Por eso se deberían usar las variables en minutos creadas en el ejercicio 14, para que las unidades coincidan y el valor de la columna comparación 2 sea igual al de la dep_time_min.
+
+### **16. Investiga si existe algún patrón del número de vuelos que se cancelan cada día.**
+```{r}
+vueloscancelados <-  vuelos %>%
+  mutate(cancelado = (is.na(arr_delay) | is.na(arr_delay))) %>%
+  group_by(year, month, day) %>%
+  summarise(num_cancelado = sum(cancelado), num_vuelo = n(),)
+
+library(ggplot2)
+ggplot(vueloscancelados) +
+  geom_line(mapping = aes(x = num_vuelo, y = num_cancelado, col=num_vuelo, )) 
+```
+
+
+En el gráfico se observa que el número de vuelos cancelados es proporcional al número de vuelos que salen cada día, por lo que a mayor número de vuelos, más vuelos cancelados. 
+
+### **17. Investiga si la proporción de vuelos cancelados está relacionada con el retraso promedio por día en los vuelos.**
+```{r}
+proporcion_retraso <- vuelos %>%
+  mutate(cancelados = (is.na(tailnum))) %>%
+  group_by(year, month, day) %>%
+  summarise(proporcion_cancelados = mean(cancelados),media_dep_delay = mean(dep_delay, na.rm = TRUE),med_arr_delay = mean(arr_delay, na.rm = TRUE)) %>% ungroup()
+proporcion_retraso
+
+ggplot(proporcion_retraso) +
+  geom_line(aes(x = media_dep_delay, y = proporcion_cancelados, col=proporcion_cancelados))
+```
+
+
+Al mirar la gráfica no se puede obtener una conclusión clara de si existe relación o no entre ambas variables. Si que parece que al aumentar la media_dep_delay aumenta la proporción porque se ve un pico a 20, pero luego vuelve a disminuir, por lo que la relación  no es clara. 
+
+### **18. Investiga si la proporción de vuelos cancelados está relacionada con el retraso promedio por aeropuerto en los vuelos.**
+Se estudiará esta relacion por aeropuertos
+
+
+**LGA**
+```{r}
+LGA <- filter(vuelos, origin=="LGA")
+
+Prop_retraso_cancel_LGA <-  LGA %>%
+  mutate(cancelados = (is.na(tailnum))) %>%
+  group_by(origin, dest) %>%
+  summarise(prop_cancelados = mean(cancelados),med_dep_delay = mean(dep_delay, na.rm = TRUE),med_arr_delay = mean(arr_delay, na.rm = TRUE)) %>% ungroup()
+
+ggplot(Prop_retraso_cancel_LGA) +
+  geom_line(aes(x = med_dep_delay, y = prop_cancelados, col= prop_cancelados))
+```
+
+
+**EWR**
+```{r}
+EWR <- filter(vuelos, origin=="EWR")
+
+Prop_retraso_cancel_EWR <- EWR %>%
+  mutate(cancelados = (is.na(tailnum))) %>%
+  group_by(origin, dest) %>%
+  summarise(prop_cancelados = mean(cancelados),med_dep_delay = mean(dep_delay, na.rm = TRUE),med_arr_delay = mean(arr_delay, na.rm = TRUE)) %>% ungroup()
+
+ggplot(Prop_retraso_cancel_EWR) +
+  geom_line(aes(x = med_dep_delay, y = prop_cancelados, col= prop_cancelados))
+```
+
+
+**JFK**
+```{r}
+JFK <- filter(vuelos, origin=="JFK")
+
+Prop_retraso_cancel_JFK <- JFK %>%
+  mutate(cancelados = (is.na(tailnum))) %>%
+  group_by(origin, dest) %>%
+  summarise(prop_cancelados = mean(cancelados),med_dep_delay = mean(dep_delay, na.rm = TRUE),med_arr_delay = mean(arr_delay, na.rm = TRUE)) %>% ungroup()
+
+ggplot(Prop_retraso_cancel_JFK) +
+  geom_line(aes(x = med_dep_delay, y = prop_cancelados, col= prop_cancelados))
+```
+
+
+En el caso del aeropuerto LGA no está claro si existe o no relación entre el número de vuelos cancelados y el retraso en la salida de los vuelos. Sin embargo, en el aeropuerto EWR sí que se puede observar que no hay una relación entre ambas variables. Por último, en el aeropuerto JFK existe una relación clara entre las dos variables.  
+
+### **19. ¿Qué compañía aérea sufre los peores retrasos?**
+```{r}
+vuelos %>%
+  group_by(carrier) %>%
+  summarise(dep_delay = mean(dep_delay, na.rm = TRUE)) %>%
+  arrange(desc(dep_delay))
+vuelos %>%
+  group_by(carrier) %>%
+  summarise(arr_delay = mean(arr_delay, na.rm = TRUE)) %>%
+  arrange(desc(arr_delay))
+```
+
+La compañía aérea que sufre los peores retrasos es F9.
+
+### **20. Queremos saber qué hora del día nos conviene volar si queremos evitar los retrasos en la salida.**
+```{r}
+vuelos %>%
+  group_by(hour) %>%
+  summarise(dep_delay = mean(dep_delay, na.rm = TRUE)) %>%
+  arrange(dep_delay)
+```
+
+La mejor hora para volar y evitar retrasos sería las 5 de la mañana.
+
+### **21. Queremos saber qué día de la semana nos conviene volar si queremos evitar los retrasos en la salida.**
+```{r}
+make_dtime <- function(year, month, day, time) {
+  make_datetime(year, month, day, time %/% 100, time %% 100)
+}
+vuelos_dt <- vuelos %>% 
+  filter(!is.na(dep_time), !is.na(arr_time)) %>% 
+  mutate(
+    dep_time = make_dtime(year, month, day, dep_time),
+    arr_time = make_dtime(year, month, day, arr_time),
+    sched_dep_time = make_dtime(year, month, day, sched_dep_time),
+    sched_arr_time = make_dtime(year, month, day, sched_arr_time)) %>% 
+  select(origin, dest, ends_with("delay"), ends_with("time"))
+vuelos_dt %>%
+  mutate(dow = wday(sched_dep_time)) %>%
+  group_by(dow) %>%
+  summarise(
+    dep_delay = mean(dep_delay),
+    arr_delay = mean(arr_delay, na.rm = TRUE)
+  ) %>%
+  print(n = Inf)
+
+vuelos_dt %>%
+  mutate(wday = wday(dep_time, label = TRUE)) %>% 
+  group_by(wday) %>% 
+  summarize(ave_dep_delay = mean(dep_delay, na.rm = TRUE)) %>% 
+  ggplot(aes(x = wday, y = ave_dep_delay)) + 
+  geom_bar(stat = "identity", col = "red")
+
+```
+
+
+Como se puede ver en el gráfico de barras el día más conveniente para viajar y evitar los retrasos es el sábado.
+
+### **22. Para cada destino, calcula el total de minutos de retraso acumulado.**
+Aquí se observa el total de minutos de retraso para cada destino.
+```{r}
+retraso_totvuelos <- vuelos %>%
+  filter(arr_delay > 0) %>%
+  group_by(dest) %>%
+  summarise(arr_delay = sum(arr_delay))
+retraso_totvuelos
+```
+
+### **23 Para cada uno de ellos, calcula la proporción del total de retraso para dicho destino.**
+```{r}
+vuelos %>%
+  filter(arr_delay > 0) %>%
+  group_by(dest, origin, carrier, flight) %>%
+  summarise(arr_delay = sum(arr_delay)) %>%
+  group_by(dest) %>%
+  mutate(
+    arr_delay_prop = arr_delay / sum(arr_delay)
+  ) %>%
+  arrange(dest, desc(arr_delay_prop)) %>%
+  select(carrier, flight, origin, dest, arr_delay_prop) 
+```
+
+### **24. Es hora de aplicar todo lo que hemos aprendido para visualizar mejor los tiempos de salida para vuelos cancelados vs los no cancelados. Recuerda bien qué tipo de dato tenemos en cada caso. ¿Qué deduces acerca de los retrasos según la hora del día a la que está programada el vuelo de salida?**
+```{r}
+vuelos_dt %>%
+  mutate(sched_dep_hour = hour(sched_dep_time)) %>%
+  group_by(sched_dep_hour) %>%
+  summarise(dep_delay = mean(dep_delay)) %>%
+  ggplot(aes(y = dep_delay, x = sched_dep_hour)) +
+  geom_point() +
+  geom_smooth()
+```
+
+
+En el gráfico se puede observar que el retraso en la salida de los vuelos va aumentando a medida que pasa el día, llegando a un máximo entre las 6 y 8 de la tarde aproximadamente. Sin embargo, se aprecia que a la madrugada los retrasos vuelven a disminuir.
+
+### **25. Subir la carpeta a github y facilitar la url.**
+
+El URL de mi carpeta en Github es el siguiente: 
+
+### **26. Al finalizar el documento agrega el comando sessionInfo()**
+```{r}
+sessionInfo()
 ```
 
