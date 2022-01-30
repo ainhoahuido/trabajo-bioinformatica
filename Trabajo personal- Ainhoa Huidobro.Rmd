@@ -305,7 +305,7 @@ En el gráfico se puede observar que el retraso en la salida de los vuelos va au
 
 ### **25. Subir la carpeta a github y facilitar la url.**
 
-El URL de mi carpeta en Github es el siguiente: 
+El URL de mi carpeta en Github es el siguiente: https://github.com/ainhoahuido/trabajo-bioinformatica.git
 
 ### **26. Al finalizar el documento agrega el comando sessionInfo()**
 ```{r}
